@@ -118,7 +118,24 @@ func callLLM(client *http.Client, input string) (string, error) {
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(body))
 	}
-	return string(body), nil
+
+	// Extract the structured output from choices > first element > message > content.
+	type LLMResponse struct {
+		Choices []struct {
+			Message struct {
+				Content string `json:"content"`
+			} `json:"message"`
+		} `json:"choices"`
+	}
+	var llmResp LLMResponse
+	err = json.Unmarshal(body, &llmResp)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse LLM API response: %v", err)
+	}
+	if len(llmResp.Choices) == 0 {
+		return "", fmt.Errorf("LLM API response has no choices")
+	}
+	return llmResp.Choices[0].Message.Content, nil
 }
 
 func validateResponse(response []byte, input string) error {
