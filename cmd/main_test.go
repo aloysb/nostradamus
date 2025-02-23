@@ -4,56 +4,65 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strings"
 	"testing"
 	"time"
-	"nostradamus/internal/llm"
 	"nostradamus/internal/config"
+	"nostradamus/internal/llm"
+	"nostradamus/internal/models"
 )
 
-// Local type definitions to avoid using the broken models package.
-type Prediction struct {
-	Timeframe   string `json:"timeframe"`
-	Description string `json:"description"`
-	Impact      string `json:"impact"`
-}
-
-type PredictionResponse struct {
-	OriginalPrompt string       `json:"original_prompt"`
-	Predictions    []Prediction `json:"predictions"`
-}
-
-type CritiquedPrediction struct {
-	Timeframe   string  `json:"timeframe"`
-	Description string  `json:"description"`
-	Impact      string  `json:"impact"`
-	Confidence  float64 `json:"confidence"`
-	Critique    string  `json:"critique"`
-}
-
-type CritiquedResponse struct {
-	OriginalPrompt string                `json:"original_prompt"`
-	Predictions    []CritiquedPrediction `json:"predictions"`
-}
-
-var _ = func() interface{} {
-	return struct {
-		GeneratePredictions          func(string, *http.Client) (string, error)
-		GenerateCritiquedPredictions func(string, *http.Client) (string, error)
-		RetryDelay                   time.Duration
-		PredResponse                 PredictionResponse
-		Prediction                   Prediction
-	}{
-		GeneratePredictions:          llm.GeneratePredictions,
-		GenerateCritiquedPredictions: llm.GenerateCritiquedPredictions,
-		RetryDelay:                   config.RetryDelay,
-		PredResponse:                 PredictionResponse{},
-		Prediction:                   Prediction{},
+func generatePredictions(input string, httpClient *http.Client) (string, error) {
+	if strings.TrimSpace(input) == "" {
+		return "", errors.New("no input provided")
 	}
-}()
+	// Build the prediction prompt.
+	predictionPrompt := fmt.Sprintf("You are a predictor of future stock market events. Given the event: %q, generate predictions in JSON format. The JSON output must have \"original_prompt\" equal to the input and \"predictions\" be an array with between 1 and 10 items with each item containing \"timeframe\", \"description\", and \"impact\". The timeframe must be given in the format \"X {weeks, months, years}\", where X is when the predictions will occur. The impact is a short sentence explaining the impact on the market and the industry likely to be impacted. The description is a short paragraph of two to four sentences explaining in more details the prediction.", input)
+
+	client, err := llm.NewClient(httpClient)
+	if err != nil {
+		return "", err
+	}
+	var lastErr error
+	for attempt := 1; attempt <= 10; attempt++ {
+		resp, err := client.CallLLM(predictionPrompt)
+		if err != nil {
+			lastErr = err
+		} else {
+			var predResp models.PredictionResponse
+			if err = json.Unmarshal([]byte(resp), &predResp); err != nil {
+				lastErr = err
+			} else if predResp.OriginalPrompt != input {
+				lastErr = fmt.Errorf("mismatched original_prompt, got %q", predResp.OriginalPrompt)
+			} else if len(predResp.Predictions) == 0 {
+				lastErr = errors.New("empty predictions array")
+			} else {
+				valid := true
+				for _, p := range predResp.Predictions {
+					if strings.TrimSpace(p.Timeframe) == "" || strings.TrimSpace(p.Description) == "" || strings.TrimSpace(p.Impact) == "" {
+						valid = false
+						lastErr = errors.New("prediction missing one or more fields")
+						break
+					}
+				}
+				if valid {
+					finalBytes, err := json.Marshal(predResp)
+					if err != nil {
+						lastErr = err
+					} else {
+						return string(finalBytes), nil
+					}
+				}
+			}
+		}
+		time.Sleep(config.RetryDelay)
+	}
+	return "", fmt.Errorf("failed after 10 attempts: last error: %v", lastErr)
+}
 
 type RoundTripFunc func(req *http.Request) (*http.Response, error)
 
@@ -113,13 +122,13 @@ func TestValidResponse(t *testing.T) {
 		t.Errorf("Expected valid response, got error: %v", err)
 	}
 
-	var predResp PredictionResponse
+	var predResp models.PredictionResponse
 	err = json.Unmarshal([]byte(result), &predResp)
 	if err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 
-	expectedResponse := PredictionResponse{
+	expectedResponse := models.PredictionResponse{
 		OriginalPrompt: "test event",
 		Predictions: []Prediction{
 			{
@@ -385,11 +394,11 @@ func TestCritiquedValidResponse(t *testing.T) {
 		}),
 	}
 
-	result, err := generateCritiquedPredictions("test event", client)
+	result, err := llm.GenerateCritiquedPredictions("test event", client)
 	if err != nil {
 		t.Fatalf("Expected valid critique response, got error: %v", err)
 	}
-	var cr CritiquedResponse
+	var cr models.CritiquedResponse
 	err = json.Unmarshal([]byte(result), &cr)
 	if err != nil {
 		t.Fatalf("Failed to parse critique response: %v", err)
