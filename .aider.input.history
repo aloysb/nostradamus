@@ -532,3 +532,219 @@
 
 # 2025-02-23 06:12:03.096582
 +a
+
+# 2025-02-23 06:12:47.546394
++N
+
+# 2025-02-23 06:12:52.390392
++/map-refresh
+
+# 2025-02-23 06:12:54.846111
++# Current task
++The current task is simply a refactoring task: we want to ensure that we leave the code as readable and usable as possible.
++
++You are forbidden to remove any code at this stage, this is purely a refactoring phase where you will move across files to improve the maintainability of the script.
++
++The code is located in a single file: cmd/main.go
++
++You need to split it and organise across multiple file as shown in the "Expected structure" below.
++
++All files are already created. You simply need to move the functions/types around, add the package declaration as neede and refer them in the import statement.
++
++## Expected structure
++The ideal output files would be organised as follow:
++
++project/
++├── cmd/
++│   └── main.go                # Entry point, starts the application
++│   └── main_test.go            # Main test file
++├── internal/
++│   ├── config/
++│   │   └── config.go          # Handles environment variables and global settings
++│   ├── logger/
++│   │   └── logger.go          # Responsible for logging
++│   ├── llm/
++│   │   └── client.go          # LLM API client functions
++│   │   └── critique.go        # Critique-related API client functions
++│   └── models/
++│       ├── prediction.go      # Models for predictions
++│       └── critique.go        # Models for critiqued predictions
++├── go.mod
++└── go.sum
++
++## Task detail
++
++UPDATE each of those to contain only the logic they are responsible for. You will need to move code, functions, variables and types around to match the "Expected structure" above.
+
+# 2025-02-23 06:12:56.534959
++a
+
+# 2025-02-23 06:17:08.762335
++n
+
+# 2025-02-23 06:17:14.962673
++# Current task
++The current task is simply a refactoring task: we want to ensure that we leave the code as readable and usable as possible.
++
++You are forbidden to remove any code at this stage, this is purely a refactoring phase where you will move across files to improve the maintainability of the script.
++
++The code is located in a single file: cmd/main.go
++
++You need to split it and organise across multiple file as shown in the "Expected structure" below.
++
++All files are already created. You simply need to move the functions/types around, add the package declaration as neede and refer them in the import statement.
++
++## Expected structure
++The ideal output files would be organised as follow:
++
++project/
++├── cmd/
++│   └── main.go                # Entry point, starts the application
++│   └── main_test.go            # Main test file
++├── internal/
++│   ├── config/
++│   │   └── config.go          # Handles environment variables and global settings
++│   ├── logger/
++│   │   └── logger.go          # Responsible for logging
++│   ├── llm/
++│   │   └── client.go          # LLM API client functions
++│   │   └── critique.go        # Critique-related API client functions
++│   └── models/
++│       ├── prediction.go      # Models for predictions
++│       └── critique.go        # Models for critiqued predictions
++├── go.mod
++└── go.sum
++
++## Task detail
++
++UPDATE each of those to contain only the logic they are responsible for. You will need to move code, functions, variables and types around to match the "Expected structure" above.
+
+# 2025-02-23 06:17:17.070392
++a
+
+# 2025-02-23 06:19:07.187650
++# Current task
++The current task is simply a refactoring task: we want to ensure that we leave the code as readable and usable as possible.
++
++You are forbidden to remove any code at this stage, this is purely a refactoring phase where you will move across files to improve the maintainability of the script.
++
++The code is located in a single file: cmd/main.go
++
++You need to split it and organise across multiple file as shown in the "Expected structure" below.
++
++All files are already created. You simply need to move the functions/types around, add the package declaration as neede and refer them in the import statement.
++
++## Expected structure
++The ideal output files would be organised as follow:
++
++project/
++├── cmd/
++│   └── main.go                # Entry point, starts the application
++│   └── main_test.go            # Main test file
++├── internal/
++│   ├── config/
++│   │   └── config.go          # Handles environment variables and global settings
++│   ├── logger/
++│   │   └── logger.go          # Responsible for logging
++│   ├── llm/
++│   │   └── client.go          # LLM API client functions
++│   │   └── critique.go        # Critique-related API client functions
++│   └── models/
++│       ├── prediction.go      # Models for predictions
++│       └── critique.go        # Models for critiqued predictions
++├── go.mod
++└── go.sum
++
++## Task detail
++
++UPDATE each of those to contain only the logic they are responsible for. You will need to move code, functions, variables and types around to match the "Expected structure" above.
+
+# 2025-02-23 06:20:30.858222
++n
+
+# 2025-02-23 06:21:01.215077
++/run go run cmd/main.go
+
+# 2025-02-23 06:21:03.969280
++What's wrong? Fix
+
+# 2025-02-23 06:22:00.741875
++a
+
+# 2025-02-23 06:23:20.717419
++n
+
+# 2025-02-23 06:23:27.870493
++/run go run cmd/main.go
+
+# 2025-02-23 06:23:30.575643
++What's wrong? Fix
+
+# 2025-02-23 06:24:39.262766
++N
+
+# 2025-02-23 06:24:45.904089
++What's wrong? Fix
+
+# 2025-02-23 06:24:49.036139
++/run go run cmd/main.go
+
+# 2025-02-23 06:24:52.577149
++What's wrong? Fix
+
+# 2025-02-23 06:27:37.806483
++n
+
+# 2025-02-23 06:27:54.950866
++/run go run cmd/main.go
+
+# 2025-02-23 06:28:23.388584
++What's wrong? Fix
+
+# 2025-02-23 06:28:36.974978
++/editor
+
+# 2025-02-23 06:30:11.070896
++
++# Current task
++The current task is simply a refactoring task: we want to ensure that we leave the code as readable and usable as possible.
++
++You are forbidden to remove any code at this stage, this is purely a refactoring phase where you will move across files to improve the maintainability of the script.
++
++The code is located in a single file: cmd/main.go
++
++You need to split it and organise across multiple file as shown in the "Expected structure" below.
++
++All files are already created. You simply need to move the functions/types around, add the package declaration as neede and refer them in the import statement.
++
++## Expected structure
++The ideal output files would be organised as follow:
++
++project/
++├── cmd/
++│   └── main.go                # Entry point, starts the application
++│   └── main_test.go            # Main test file
++├── internal/
++│   ├── config/
++│   │   └── config.go          # Handles environment variables and global settings
++│   ├── logger/
++│   │   └── logger.go          # Responsible for logging
++│   ├── llm/
++│   │   └── client.go          # LLM API client functions
++
++│   │   └── critique.go        # Critique-related API client functions
++│   └── models/
++│       ├── prediction.go      # Models for predictions
++│       └── critique.go        # Models for critiqued predictions
++├── go.mod
++└── go.sum
++
++## Task detail
++
++UPDATE `cmd/main.go`. You need to simply `cmd/main.go` so it is only an entry points. It contains a lot of type and function related to the llm/models packages.
+
+# 2025-02-23 06:30:13.164686
++a
+
+# 2025-02-23 06:33:37.551522
++n

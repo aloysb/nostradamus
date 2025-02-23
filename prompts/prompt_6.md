@@ -23,6 +23,7 @@ project/
 │   │   └── logger.go          # Responsible for logging
 │   ├── llm/
 │   │   └── client.go          # LLM API client functions
+
 │   │   └── critique.go        # Critique-related API client functions
 │   └── models/
 │       ├── prediction.go      # Models for predictions
