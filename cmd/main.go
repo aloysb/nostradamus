@@ -49,7 +49,12 @@ func main() {
 	logger.Info("Received input", "input", input)
 
 	// Generate critiqued predictions via LLM API calls.
-	result, err := llm.GenerateCritiquedPredictions(input, http.DefaultClient)
+	llmClient, err := llm.NewClient(http.DefaultClient)
+	if err != nil {
+		logger.Error("Error creating LLM client", "error", err)
+		os.Exit(1)
+	}
+	result, err := llm.GenerateCritiquedPredictions(input, llmClient)
 	if err != nil {
 		logger.Error("Error generating critiqued predictions", "error", err)
 		os.Exit(1)
@@ -209,79 +214,6 @@ func validateResponse(response []byte, input string) error {
 	return nil
 }
 
-// callLLMCritique sends a request to the LLM API to get a critiqued version of the predictions.
-// It returns the sanitized JSON response from the critique API.
-func callLLMCritique(client *http.Client, firstResult string) (string, error) {
-	apiKey := os.Getenv("OPENAI_API_KEY")
-	if apiKey == "" {
-		return "", errors.New("OPENAI_API_KEY is not set")
-	}
-	url := "https://api.openai.com/v1/chat/completions"
-
-	critiquePrompt := fmt.Sprintf("You are a knowledgeable investor. Critically review the following predictions in JSON format and add two additional fields to each prediction: \"confidence\" (a float between 0 and 1) and \"critique\" (a string explaining why this prediction is likely or not). Ensure that the output JSON object has \"original_prompt\" equal to the original input and \"predictions\" is an array of prediction objects with the additional fields. Input predictions: %s", firstResult)
-
-	requestPayload := map[string]interface{}{
-		"model": "o1-mini",
-		"messages": []map[string]string{
-			{"role": "user", "content": critiquePrompt},
-		},
-	}
-	requestBody, err := json.Marshal(requestPayload)
-	if err != nil {
-		return "", err
-	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBody))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	logger.Info("Sending critique request to LLM API", "url", url, "payload", string(requestBody))
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	bodyBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("critique API returned status %d: %s", resp.StatusCode, string(bodyBytes))
-	}
-
-	// Attempt to parse the response as an LLM chat response.
-	type llmMessage struct {
-		Content string `json:"content"`
-	}
-	type llmChoice struct {
-		Message llmMessage `json:"message"`
-	}
-	type llmResponse struct {
-		Choices []llmChoice `json:"choices"`
-	}
-	var lr llmResponse
-	err = json.Unmarshal(bodyBytes, &lr)
-	if err == nil && len(lr.Choices) > 0 {
-		result := sanitizeResponse(lr.Choices[0].Message.Content)
-		return result, nil
-	}
-
-	// Fallback: try to unmarshal as a CritiquedResponse.
-	var cr CritiquedResponse
-	err = json.Unmarshal(bodyBytes, &cr)
-	if err == nil && cr.OriginalPrompt != "" && len(cr.Predictions) >= 1 && len(cr.Predictions) <= 10 {
-		resultBytes, err := json.Marshal(cr)
-		if err != nil {
-			return "", fmt.Errorf("failed to re-marshal CritiquedResponse: %v", err)
-		}
-		return string(resultBytes), nil
-	}
-	return "", fmt.Errorf("failed to parse LLM critique API response; fallback error: %v", err)
-}
 
 // validateCritiqueResponse verifies that the critique response JSON conforms to the expected CritiquedResponse structure.
 func validateCritiqueResponse(response []byte, input string) error {

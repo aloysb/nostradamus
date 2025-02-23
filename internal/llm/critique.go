@@ -14,7 +14,7 @@ import (
 
 // GenerateCritiquedPredictions calls the LLM API to first generate predictions and then critiques them.
 // It retries up to 10 times until it gets a valid JSON response.
-func GenerateCritiquedPredictions(input string, client *http.Client) (string, error) {
+func GenerateCritiquedPredictions(input string, client *Client) (string, error) {
 	if strings.TrimSpace(input) == "" {
 		return "", errors.New("no input provided")
 	}
@@ -50,4 +50,11 @@ func GenerateCritiquedPredictions(input string, client *http.Client) (string, er
 		return critiqueResponse, nil
 	}
 	return "", fmt.Errorf("failed after 10 critique attempts: last error: %v", lastErr)
+}
+// callLLMCritique sends a request to the LLM API to get a critiqued version of the predictions.
+// It returns the sanitized JSON response from the critique API.
+func callLLMCritique(client *Client, firstResult string) (string, error) {
+	critiquePrompt := fmt.Sprintf("You are a knowledgeable investor. Critically review the following predictions in JSON format and add two additional fields to each prediction: \"confidence\" (a float between 0 and 1) and \"critique\" (a string explaining why this prediction is likely or not). Ensure that the output JSON object has \"original_prompt\" equal to the original input and \"predictions\" is an array of prediction objects with the additional fields. Input predictions: %s", firstResult)
+
+	return client.CallLLM(critiquePrompt)
 }
