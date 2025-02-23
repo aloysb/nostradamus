@@ -32,7 +32,7 @@ Nostradamus is a command-line tool written in Go that forecasts potential future
    ```
 3. Execute the script by providing an event description as an argument:
    ```bash
-   go run main.go "The ocean isn't salty anymore"
+   go run cmd/main.go "The ocean isn't salty anymore"
    ```
 
 ## Debug Logging
@@ -41,32 +41,46 @@ When the DEBUG environment variable is set to 1, Nostradamus will output detaile
 
 ## Example Output
 
-When running the command `go run main.go "The ocean isn't salty anymore"` you get a result similar to:
+When running the command `go run cmd:main.go "The planet has warmed up .1 degree faster than predicted" you get a result similar to:
 
 ```json
 {
-  "original_prompt": "The ocean isn't salty anymore",
+  "original_prompt": "The planet has warmed up .1 degree faster than predicted",
   "predictions": [
     {
-      "timeframe": "1 month",
-      "description": "Significant decline in the salt industry as demand plummets due to the absence of natural salt sources from the oceans.",
-      "impact": "Negative impact on companies specializing in salt production and distribution, potentially leading to stock price drops in the sector.",
-      "confidence": 0.05,
-      "critique": "The premise that oceans have lost their salinity is highly implausible within a one-month timeframe. Ocean salinity is influenced by long-term geological and hydrological processes, making such a drastic change virtually impossible in such a short period. Therefore, the predicted decline in the salt industry is unlikely to materialize."
-    },
-    {
-      "timeframe": "3 months",
-      "description": "Disruption in the global fishing industry as freshwater oceans lead to a collapse of marine ecosystems, reducing fish populations.",
-      "impact": "Decline in revenues for fishing companies and related supply chains, causing investor concern and potential sell-offs in the industry.",
-      "confidence": 0.07,
-      "critique": "A sudden shift to freshwater oceans would have catastrophic effects on marine ecosystems, but such a transformation is not feasible within three months. Marine species are adapted to saline environments, and a rapid change would likely lead to mass extinctions. However, the timeframe is unrealistic, making the predicted disruptions and financial impacts unlikely in the near term."
-    },
-    {
       "timeframe": "6 months",
-      "description": "Surge in investment in alternative salt production methods and freshwater marine farming technologies to compensate for the loss of natural ocean salt.",
-      "impact": "Growth in stocks of companies innovating in alternative salt production and sustainable aquaculture, presenting new investment opportunities.",
-      "confidence": 0.10,
-      "critique": "While the development of alternative salt production and sustainable aquaculture is a positive trend, tying this surge directly to the hypothetical scenario of non-salty oceans remains unlikely within six months. The timeframe is too short for significant technological advancements and market shifts in these sectors. Additionally, the initial premise lacks realism, thereby reducing the likelihood of the predicted investment surge."
+      "description": "Accelerated global warming may lead to increased regulatory pressures on carbon emissions. Governments might implement stricter environmental policies to curb further warming, affecting industries reliant on fossil fuels.",
+      "impact": "Energy sector stocks, particularly fossil fuel companies, may experience declines due to heightened regulatory risks.",
+      "confidence": 0.7,
+      "critique": "The accelerated warming trend can heighten the urgency for governments to act, increasing the likelihood of stricter regulations. However, policy changes often face political and economic hurdles that may delay immediate implementation."
+    },
+    {
+      "timeframe": "1 year",
+      "description": "Faster warming can exacerbate extreme weather events, disrupting supply chains and increasing operational costs for manufacturing companies. Businesses may face higher insurance premiums and potential damages from climate-related incidents.",
+      "impact": "Manufacturing and logistics industries could see reduced profit margins and increased volatility in their stock prices.",
+      "confidence": 0.65,
+      "critique": "There is a growing correlation between climate change and extreme weather events, which can disrupt supply chains. Nevertheless, the extent and timing of such disruptions are often unpredictable, affecting the confidence level."
+    },
+    {
+      "timeframe": "2 years",
+      "description": "Heightened awareness and urgency around climate change may drive increased investment in renewable energy and sustainable technologies. Companies specializing in solar, wind, and electric vehicles are likely to attract more capital.",
+      "impact": "Renewable energy sector stocks are expected to rise as investor interest shifts towards sustainable solutions.",
+      "confidence": 0.8,
+      "critique": "The trend towards sustainable investment is strong and supported by both consumer demand and policy incentives. This makes the prediction of increased capital flow into renewable energy sectors fairly reliable."
+    },
+    {
+      "timeframe": "3 years",
+      "description": "Agricultural yields may be negatively impacted by the accelerated warming, leading to higher food prices and increased costs for food processing companies. This could also affect commodity markets tied to essential crops.",
+      "impact": "Food and agriculture-related stocks might face pressure from rising input costs and supply chain challenges.",
+      "confidence": 0.6,
+      "critique": "While climate change poses risks to agriculture, the actual impact on yields can vary by region and crop type. Adaptive measures by farmers and advancements in agricultural technology may mitigate some negative effects, reducing overall confidence."
+    },
+    {
+      "timeframe": "5 years",
+      "description": "Long-term climate shifts could influence real estate markets, especially in regions prone to extreme weather or sea-level rise. Property values in vulnerable areas may decline, while investments in resilient infrastructure could become more attractive.",
+      "impact": "Real estate investment trusts (REITs) and construction companies focused on sustainable building practices may see varied performance based on geographic exposure.",
+      "confidence": 0.75,
+      "critique": "Climate resilience is becoming a key factor in real estate investment decisions, and areas vulnerable to climate risks are increasingly scrutinized. However, market responses can be gradual and influenced by a variety of economic factors, slightly tempering the confidence."
     }
   ]
 }
