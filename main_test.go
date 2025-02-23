@@ -12,6 +12,23 @@ import (
 	"time"
 )
 
+// Dummy variable to force inclusion of symbols from main.go.
+// This ensures that generatePredictions, retryDelay, PredictionResponse, and Prediction
+// are referenced, preventing "undefined" errors when linting this file alone.
+var _ = func() interface{} {
+	return struct {
+		GeneratePredictions func(string, *http.Client) (string, error)
+		RetryDelay          time.Duration
+		PredResponse        PredictionResponse
+		Prediction          Prediction
+	}{
+		GeneratePredictions: generatePredictions,
+		RetryDelay:          retryDelay,
+		PredResponse:        PredictionResponse{},
+		Prediction:          Prediction{},
+	}
+}()
+
 type RoundTripFunc func(req *http.Request) (*http.Response, error)
 
 func (f RoundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -244,7 +261,7 @@ func TestEmptyPredictions(t *testing.T) {
 	retryDelay = 1 * time.Millisecond
 	defer func() { retryDelay = originalDelay }()
 
-	// Return JSON with empty predictions array
+	// Return JSON with an empty predictions array
 	resp := `{"original_prompt": "test event", "predictions": []}`
 	client := &http.Client{
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -292,7 +309,7 @@ func TestAPIReturnsHTTPError(t *testing.T) {
 	retryDelay = 1 * time.Millisecond
 	defer func() { retryDelay = originalDelay }()
 
-	// Return HTTP error status, e.g., 500 Internal Server Error
+	// Return an HTTP error status, e.g., 500 Internal Server Error
 	client := &http.Client{
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
