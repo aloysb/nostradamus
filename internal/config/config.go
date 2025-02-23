@@ -1,6 +1,9 @@
 package config
 
-import "os"
+import (
+	"os"
+	"time"
+)
 
 // Config holds application configuration
 type Config struct {
@@ -13,3 +16,6 @@ func New() *Config {
 		Debug: os.Getenv("DEBUG") == "1",
 	}
 }
+
+// RetryDelay defines the waiting period between API call attempts.
+var RetryDelay = 1 * time.Second

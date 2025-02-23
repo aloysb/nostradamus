@@ -6,6 +6,12 @@ import (
 	"os"
 )
 
+var Logger *Logger
+
+func init() {
+	Logger = New(os.Getenv("DEBUG") == "1")
+}
+
 // Logger wraps slog.Logger to provide structured logging
 type Logger struct {
 	*slog.Logger

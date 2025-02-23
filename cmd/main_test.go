@@ -10,6 +10,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"nostradamus/internal/llm"
+	"nostradamus/internal/config"
+	"nostradamus/internal/models"
 )
 
 // Dummy variable to force inclusion of symbols from main.go.
@@ -17,17 +20,17 @@ import (
 // are referenced, preventing "undefined" errors when linting this file alone.
 var _ = func() interface{} {
 	return struct {
-		GeneratePredictions     func(string, *http.Client) (string, error)
+		GeneratePredictions          func(string, *http.Client) (string, error)
 		GenerateCritiquedPredictions func(string, *http.Client) (string, error)
-		RetryDelay              time.Duration
-		PredResponse            PredictionResponse
-		Prediction              Prediction
+		RetryDelay                   time.Duration
+		PredResponse                 models.PredictionResponse
+		Prediction                   models.Prediction
 	}{
-		GeneratePredictions:     generatePredictions,
-		GenerateCritiquedPredictions: generateCritiquedPredictions,
-		RetryDelay:              retryDelay,
-		PredResponse:            PredictionResponse{},
-		Prediction:              Prediction{},
+		GeneratePredictions:          llm.GeneratePredictions,
+		GenerateCritiquedPredictions: llm.GenerateCritiquedPredictions,
+		RetryDelay:                   config.RetryDelay,
+		PredResponse:                 models.PredictionResponse{},
+		Prediction:                   models.Prediction{},
 	}
 }()
 

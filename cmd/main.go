@@ -1,42 +1,15 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"strings"
-	"time"
-	"log/slog"
+	"nostradamus/internal/config"
+	"nostradamus/internal/logger"
+	"nostradamus/internal/llm"
+	"nostradamus/internal/models"
 )
-
-// Global variables for debug mode and structured logging.
-var (
-	debugMode bool
-	logger    *slog.Logger
-)
-
-// init initializes the debug mode and logger based on the DEBUG environment variable.
-func init() {
-	debugMode = os.Getenv("DEBUG") == "1"
-	var handler slog.Handler
-	if debugMode {
-		// When DEBUG is set to 1, log debug and info messages to stdout.
-		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
-	} else {
-		// Otherwise, discard all log messages.
-		handler = slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelDebug})
-	}
-	logger = slog.New(handler)
-}
-
-// retryDelay defines the waiting period between API retry attempts.
-var retryDelay = 1 * time.Second
-
-// Prediction represents a single event prediction.
 type Prediction struct {
 	Timeframe   string `json:"timeframe"`
 	Description string `json:"description"`
@@ -76,12 +49,12 @@ func main() {
 	logger.Info("Received input", "input", input)
 
 	// Generate critiqued predictions via LLM API calls.
-	result, err := generateCritiquedPredictions(input, http.DefaultClient)
+	result, err := llm.GenerateCritiquedPredictions(input, http.DefaultClient)
 	if err != nil {
-		logger.Error("Error generating critiqued predictions", "error", err)
+		logger.Logger.Error("Error generating critiqued predictions", "error", err)
 		os.Exit(1)
 	}
-	logger.Info("Final valid critiqued predictions", "result", result)
+	logger.Logger.Info("Final valid critiqued predictions", "result", result)
 	fmt.Println(result)
 }
 
