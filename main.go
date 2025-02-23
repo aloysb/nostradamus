@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -135,7 +136,9 @@ func callLLM(client *http.Client, input string) (string, error) {
 	if len(llmResp.Choices) == 0 {
 		return "", fmt.Errorf("LLM API response has no choices")
 	}
-	return llmResp.Choices[0].Message.Content, nil
+	result := llmResp.Choices[0].Message.Content
+	result = sanitizeResponse(result)
+	return result, nil
 }
 
 func validateResponse(response []byte, input string) error {
@@ -162,4 +165,20 @@ func validateResponse(response []byte, input string) error {
 		}
 	}
 	return nil
+}
+
+func sanitizeResponse(s string) string {
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "```") {
+		lines := strings.Split(s, "\n")
+		if len(lines) > 0 {
+			lines = lines[1:]
+		}
+		if len(lines) > 0 && strings.TrimSpace(lines[len(lines)-1]) == "```" {
+			lines = lines[:len(lines)-1]
+		}
+		s = strings.Join(lines, "\n")
+		s = strings.TrimSpace(s)
+	}
+	return s
 }
