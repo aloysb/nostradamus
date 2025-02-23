@@ -81,7 +81,7 @@ func callLLM(client *http.Client, input string) (string, error) {
 	if apiKey == "" {
 		return "", errors.New("OPENAI_API_KEY is not set")
 	}
-	url := "https://api.openai.com/v1/completions"
+	url := "https://api.openai.com/v1/chat/completions"
 
 	// Create a system prompt describing the task.
 	finalPrompt := "You are a predictor of future stock market events. Given the event: \"" + input + "\", generate predictions in JSON format. The JSON output must have the field \"original_prompt\" equal to the given input and \"predictions\" be an array with between 1 and 10 items, where each item contains \"timeframe\", \"description\", \"impact\". For example: { \"original_prompt\": \"" + input + "\", \"predictions\": [{ \"timeframe\": \"1 week\", \"description\": \"Prediction text\", \"impact\": \"market impact\" }] }"
