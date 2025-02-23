@@ -102,9 +102,9 @@ func TestAPIFailure(t *testing.T) {
 
 func TestValidResponse(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	// This is a PredictionResponse format (fallback branch) response.
 	validResp := `{"original_prompt": "test event", "predictions": [{"timeframe": "1 week", "description": "Event A", "impact": "Market volatility"}]}`
@@ -169,9 +169,9 @@ func TestValidResponse(t *testing.T) {
 
 func TestInvalidJSONThenValid(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	callCount := 0
 	validResp := `{"original_prompt": "test event", "predictions": [{"timeframe": "1 week", "description": "Event A", "impact": "Market volatility"}]}`
@@ -205,9 +205,9 @@ func TestInvalidJSONThenValid(t *testing.T) {
 		t.Fatalf("Failed to parse response: %v", err)
 	}
 
-	expectedResponse := PredictionResponse{
+	expectedResponse := models.PredictionResponse{
 		OriginalPrompt: "test event",
-		Predictions: []Prediction{
+		Predictions: []models.Prediction{
 			{
 				Timeframe:   "1 week",
 				Description: "Event A",
@@ -246,9 +246,9 @@ func TestInvalidJSONThenValid(t *testing.T) {
 
 func TestAlwaysInvalidResponse(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	client := &http.Client{
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -268,9 +268,9 @@ func TestAlwaysInvalidResponse(t *testing.T) {
 
 func TestMismatchedOriginalPrompt(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	// Return a JSON where original_prompt does not match input
 	resp := `{"original_prompt": "different event", "predictions": [{"timeframe": "1 week", "description": "Event A", "impact": "Market volatility"}]}`
@@ -292,9 +292,9 @@ func TestMismatchedOriginalPrompt(t *testing.T) {
 
 func TestEmptyPredictions(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	// Return JSON with an empty predictions array
 	resp := `{"original_prompt": "test event", "predictions": []}`
@@ -316,9 +316,9 @@ func TestEmptyPredictions(t *testing.T) {
 
 func TestPredictionMissingField(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	// Return JSON with a prediction missing a required field (empty description)
 	resp := `{"original_prompt": "test event", "predictions": [{"timeframe": "1 week", "description": "", "impact": "Market volatility"}]}`
@@ -340,9 +340,9 @@ func TestPredictionMissingField(t *testing.T) {
 
 func TestAPIReturnsHTTPError(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	// Return an HTTP error status, e.g., 500 Internal Server Error
 	client := &http.Client{
@@ -365,9 +365,9 @@ func TestAPIReturnsHTTPError(t *testing.T) {
 
 func TestCritiquedValidResponse(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	client := &http.Client{
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -420,9 +420,9 @@ func TestCritiquedValidResponse(t *testing.T) {
 
 func TestCritiquedAPIFailure(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	client := &http.Client{
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
@@ -456,9 +456,9 @@ func TestCritiquedAPIFailure(t *testing.T) {
 
 func TestCritiquedInvalidJSONResponse(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay :=config.RetryDelay
+config.RetryDelay = 1 * time.Millisecond
+	defer func() {config.RetryDelay = originalDelay }()
 
 	callCount := 0
 	client := &http.Client{
@@ -486,7 +486,7 @@ func TestCritiquedInvalidJSONResponse(t *testing.T) {
 		}),
 	}
 
-	_, err := generateCritiquedPredictions("test event", client)
+	_, err := llm.GenerateCritiquedPredictions("test event", client)
 	if err == nil {
 		t.Error("Expected error due to invalid critique JSON, got nil")
 	}
