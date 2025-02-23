@@ -86,9 +86,9 @@ func TestGeneratePredictionsNoInput(t *testing.T) {
 
 func TestAPIFailure(t *testing.T) {
 	os.Setenv("OPENAI_API_KEY", "testkey")
-	originalDelay := retryDelay
-	retryDelay = 1 * time.Millisecond
-	defer func() { retryDelay = originalDelay }()
+	originalDelay := config.RetryDelay
+	config.RetryDelay = 1 * time.Millisecond
+	defer func() { config.RetryDelay = originalDelay }()
 	client := &http.Client{
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return nil, errors.New("API down")
@@ -130,7 +130,7 @@ func TestValidResponse(t *testing.T) {
 
 	expectedResponse := models.PredictionResponse{
 		OriginalPrompt: "test event",
-		Predictions: []Prediction{
+		Predictions: []models.Prediction{
 			{
 				Timeframe:   "1 week",
 				Description: "Event A",
@@ -199,7 +199,7 @@ func TestInvalidJSONThenValid(t *testing.T) {
 		t.Errorf("Expected valid response after retries, got error: %v", err)
 	}
 
-	var predResp PredictionResponse
+	var predResp models.PredictionResponse
 	err = json.Unmarshal([]byte(result), &predResp)
 	if err != nil {
 		t.Fatalf("Failed to parse response: %v", err)
@@ -448,7 +448,7 @@ func TestCritiquedAPIFailure(t *testing.T) {
 		}),
 	}
 
-	_, err := generateCritiquedPredictions("test event", client)
+	_, err := llm.GenerateCritiquedPredictions("test event", client)
 	if err == nil {
 		t.Error("Expected error due to second agent API failure, got nil")
 	}
