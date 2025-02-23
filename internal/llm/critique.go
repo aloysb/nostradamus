@@ -45,8 +45,16 @@ func GenerateCritiquedPredictions(input string, client *Client) (string, error) 
 			time.Sleep(config.RetryDelay)
 			continue
 		}
-
-		return critiqueResponse, nil
+		// Force "original_prompt" to be only the user input
+		tmp["original_prompt"] = input
+		finalResponse, err := json.Marshal(tmp)
+		if err != nil {
+			logger.Error("Failed to marshal final response", "error", err)
+			lastErr = err
+			time.Sleep(config.RetryDelay)
+			continue
+		}
+		return string(finalResponse), nil
 	}
 	return "", fmt.Errorf("failed after 10 critique attempts: last error: %v", lastErr)
 }
