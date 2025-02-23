@@ -394,7 +394,11 @@ config.RetryDelay = 1 * time.Millisecond
 		}),
 	}
 
-	result, err := llm.GenerateCritiquedPredictions("test event", client)
+	llmClient, err := llm.NewClient(client)
+	if err != nil {
+		t.Fatalf("Failed to create LLM client: %v", err)
+	}
+	result, err := llm.GenerateCritiquedPredictions("test event", llmClient)
 	if err != nil {
 		t.Fatalf("Expected valid critique response, got error: %v", err)
 	}
@@ -448,7 +452,11 @@ config.RetryDelay = 1 * time.Millisecond
 		}),
 	}
 
-	_, err := llm.GenerateCritiquedPredictions("test event", client)
+	llmClient, err := llm.NewClient(client)
+	if err != nil {
+		t.Fatalf("Failed to create LLM client: %v", err)
+	}
+	_, err = llm.GenerateCritiquedPredictions("test event", llmClient)
 	if err == nil {
 		t.Error("Expected error due to second agent API failure, got nil")
 	}
@@ -486,7 +494,11 @@ config.RetryDelay = 1 * time.Millisecond
 		}),
 	}
 
-	_, err := llm.GenerateCritiquedPredictions("test event", client)
+	llmClient, err := llm.NewClient(client)
+	if err != nil {
+		t.Fatalf("Failed to create LLM client: %v", err)
+	}
+	_, err = llm.GenerateCritiquedPredictions("test event", llmClient)
 	if err == nil {
 		t.Error("Expected error due to invalid critique JSON, got nil")
 	}
