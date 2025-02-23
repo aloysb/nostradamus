@@ -6,10 +6,20 @@ import (
 	"os"
 )
 
-var Logger *Logger
+var DefaultLogger *Logger
 
 func init() {
-	Logger = New(os.Getenv("DEBUG") == "1")
+	DefaultLogger = New(os.Getenv("DEBUG") == "1")
+}
+
+// Info logs an informational message
+func Info(msg string, keysAndValues ...interface{}) {
+	DefaultLogger.Info(msg, keysAndValues...)
+}
+
+// Error logs an error message
+func Error(msg string, keysAndValues ...interface{}) {
+	DefaultLogger.Error(msg, keysAndValues...)
 }
 
 // Logger wraps slog.Logger to provide structured logging

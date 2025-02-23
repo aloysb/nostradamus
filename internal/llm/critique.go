@@ -32,7 +32,7 @@ func GenerateCritiquedPredictions(input string, client *http.Client) (string, er
 		critiquePrompt := fmt.Sprintf("You are a knowledgeable investor. Critically review the following predictions in JSON format and add two additional fields to each prediction: \"confidence\" (a float between 0 and 1) and \"critique\" (a string explaining why this prediction is likely or not). Input predictions: %s", initialResponse)
 		critiqueResponse, err := client.CallLLM(critiquePrompt)
 		if err != nil {
-			logger.Logger.Error("Critique API call failed", "attempt", attempt, "error", err)
+			logger.Error("Critique API call failed", "attempt", attempt, "error", err)
 			lastErr = err
 			time.Sleep(config.RetryDelay)
 			continue
@@ -41,7 +41,7 @@ func GenerateCritiquedPredictions(input string, client *http.Client) (string, er
 		// Validate JSON response
 		var tmp map[string]interface{}
 		if err = json.Unmarshal([]byte(critiqueResponse), &tmp); err != nil {
-			logger.Logger.Error("Invalid JSON in critique response", "attempt", attempt, "error", err)
+			logger.Error("Invalid JSON in critique response", "attempt", attempt, "error", err)
 			lastErr = err
 			time.Sleep(config.RetryDelay)
 			continue

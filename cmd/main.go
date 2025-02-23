@@ -51,10 +51,10 @@ func main() {
 	// Generate critiqued predictions via LLM API calls.
 	result, err := llm.GenerateCritiquedPredictions(input, http.DefaultClient)
 	if err != nil {
-		logger.Logger.Error("Error generating critiqued predictions", "error", err)
+		logger.Error("Error generating critiqued predictions", "error", err)
 		os.Exit(1)
 	}
-	logger.Logger.Info("Final valid critiqued predictions", "result", result)
+	logger.Info("Final valid critiqued predictions", "result", result)
 	fmt.Println(result)
 }
 
