@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -77,7 +77,7 @@ func TestValidResponse(t *testing.T) {
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(validResp)),
+				Body:       io.NopCloser(bytes.NewBufferString(validResp)),
 				Header:     make(http.Header),
 			}, nil
 		}),
@@ -147,13 +147,13 @@ func TestInvalidJSONThenValid(t *testing.T) {
 				// Return invalid JSON on first two attempts
 				return &http.Response{
 					StatusCode: http.StatusOK,
-					Body:       ioutil.NopCloser(bytes.NewBufferString("invalid json")),
+					Body:       io.NopCloser(bytes.NewBufferString("invalid json")),
 					Header:     make(http.Header),
 				}, nil
 			}
 			return &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(validResp)),
+				Body:       io.NopCloser(bytes.NewBufferString(validResp)),
 				Header:     make(http.Header),
 			}, nil
 		}),
@@ -219,7 +219,7 @@ func TestAlwaysInvalidResponse(t *testing.T) {
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBufferString("invalid json")),
+				Body:       io.NopCloser(bytes.NewBufferString("invalid json")),
 				Header:     make(http.Header),
 			}, nil
 		}),
@@ -243,7 +243,7 @@ func TestMismatchedOriginalPrompt(t *testing.T) {
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(resp)),
+				Body:       io.NopCloser(bytes.NewBufferString(resp)),
 				Header:     make(http.Header),
 			}, nil
 		}),
@@ -267,7 +267,7 @@ func TestEmptyPredictions(t *testing.T) {
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(resp)),
+				Body:       io.NopCloser(bytes.NewBufferString(resp)),
 				Header:     make(http.Header),
 			}, nil
 		}),
@@ -291,7 +291,7 @@ func TestPredictionMissingField(t *testing.T) {
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBufferString(resp)),
+				Body:       io.NopCloser(bytes.NewBufferString(resp)),
 				Header:     make(http.Header),
 			}, nil
 		}),
@@ -314,7 +314,7 @@ func TestAPIReturnsHTTPError(t *testing.T) {
 		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
 			return &http.Response{
 				StatusCode: http.StatusInternalServerError,
-				Body:       ioutil.NopCloser(bytes.NewBufferString("Internal Server Error")),
+				Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
 				Header:     make(http.Header),
 			}, nil
 		}),
