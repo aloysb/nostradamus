@@ -1,5 +1,30 @@
 package main
 
+// Local type definitions to avoid using the broken models package.
+type Prediction struct {
+	Timeframe   string `json:"timeframe"`
+	Description string `json:"description"`
+	Impact      string `json:"impact"`
+}
+
+type PredictionResponse struct {
+	OriginalPrompt string       `json:"original_prompt"`
+	Predictions    []Prediction `json:"predictions"`
+}
+
+type CritiquedPrediction struct {
+	Timeframe   string  `json:"timeframe"`
+	Description string  `json:"description"`
+	Impact      string  `json:"impact"`
+	Confidence  float64 `json:"confidence"`
+	Critique    string  `json:"critique"`
+}
+
+type CritiquedResponse struct {
+	OriginalPrompt string                `json:"original_prompt"`
+	Predictions    []CritiquedPrediction `json:"predictions"`
+}
+
 import (
 	"bytes"
 	"encoding/json"
@@ -23,14 +48,14 @@ var _ = func() interface{} {
 		GeneratePredictions          func(string, *http.Client) (string, error)
 		GenerateCritiquedPredictions func(string, *http.Client) (string, error)
 		RetryDelay                   time.Duration
-		PredResponse                 models.PredictionResponse
-		Prediction                   models.Prediction
+		PredResponse                 PredictionResponse
+		Prediction                   Prediction
 	}{
 		GeneratePredictions:          llm.GeneratePredictions,
 		GenerateCritiquedPredictions: llm.GenerateCritiquedPredictions,
 		RetryDelay:                   config.RetryDelay,
-		PredResponse:                 models.PredictionResponse{},
-		Prediction:                   models.Prediction{},
+		PredResponse:                 PredictionResponse{},
+		Prediction:                   Prediction{},
 	}
 }()
 
