@@ -26,10 +26,18 @@ Nostradamus is a command-line tool written in Go that forecasts potential future
    ```bash
    export OPENAI_API_KEY=your_openai_api_key_here
    ```
-2. Execute the script by providing an event description as an argument:
+2. Optionally, enable debug logging to see detailed execution logs by setting the DEBUG environment variable to 1:
+   ```bash
+   export DEBUG=1
+   ```
+3. Execute the script by providing an event description as an argument:
    ```bash
    go run main.go "The ocean isn't salty anymore"
    ```
+
+## Debug Logging
+
+When the DEBUG environment variable is set to 1, Nostradamus will output detailed debug information using structured logging. This can help you trace the execution flow and diagnose issues. If DEBUG is not set or is set to a value other than 1, debug logs will be suppressed.
 
 ## Example Output
 

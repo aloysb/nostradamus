@@ -318,3 +318,6 @@
 
 # 2025-02-23 05:37:18.651705
 +Add to the readme an explanation about the ability to see debugging log via setting the debug env variable to 1 
+
+# 2025-02-23 05:39:25.318994
++yes
