@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"net/http"
 	"io"
+	"net/http"
 	"os"
 	"strings"
 	"testing"
@@ -17,15 +17,17 @@ import (
 // are referenced, preventing "undefined" errors when linting this file alone.
 var _ = func() interface{} {
 	return struct {
-		GeneratePredictions func(string, *http.Client) (string, error)
-		RetryDelay          time.Duration
-		PredResponse        PredictionResponse
-		Prediction          Prediction
+		GeneratePredictions     func(string, *http.Client) (string, error)
+		GenerateCritiquedPredictions func(string, *http.Client) (string, error)
+		RetryDelay              time.Duration
+		PredResponse            PredictionResponse
+		Prediction              Prediction
 	}{
-		GeneratePredictions: generatePredictions,
-		RetryDelay:          retryDelay,
-		PredResponse:        PredictionResponse{},
-		Prediction:          Prediction{},
+		GeneratePredictions:     generatePredictions,
+		GenerateCritiquedPredictions: generateCritiquedPredictions,
+		RetryDelay:              retryDelay,
+		PredResponse:            PredictionResponse{},
+		Prediction:              Prediction{},
 	}
 }()
 
@@ -323,5 +325,139 @@ func TestAPIReturnsHTTPError(t *testing.T) {
 	_, err := generatePredictions("test event", client)
 	if err == nil {
 		t.Error("Expected error due to HTTP error status from API, got nil")
+	}
+}
+
+// New tests for the critique agent functionality
+
+func TestCritiquedValidResponse(t *testing.T) {
+	os.Setenv("OPENAI_API_KEY", "testkey")
+	originalDelay := retryDelay
+	retryDelay = 1 * time.Millisecond
+	defer func() { retryDelay = originalDelay }()
+
+	client := &http.Client{
+		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			bodyBytes, _ := io.ReadAll(req.Body)
+			bodyStr := string(bodyBytes)
+			if strings.Contains(bodyStr, "predictor of future stock market events") {
+				// Simulate first agent response
+				validResp := `{"original_prompt": "test event", "predictions": [{"timeframe": "1 week", "description": "Event A", "impact": "Market volatility"}]}`
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString(validResp)),
+					Header:     make(http.Header),
+				}, nil
+			} else if strings.Contains(bodyStr, "Critically review") {
+				// Simulate valid critique response
+				critiquedResp := `{"original_prompt": "test event", "predictions": [{"timeframe": "1 week", "description": "Event A", "impact": "Market volatility", "confidence": 0.95, "critique": "Likely due to favorable conditions"}]}`
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString(critiquedResp)),
+					Header:     make(http.Header),
+				}, nil
+			}
+			return nil, errors.New("unexpected request")
+		}),
+	}
+
+	result, err := generateCritiquedPredictions("test event", client)
+	if err != nil {
+		t.Fatalf("Expected valid critique response, got error: %v", err)
+	}
+	var cr CritiquedResponse
+	err = json.Unmarshal([]byte(result), &cr)
+	if err != nil {
+		t.Fatalf("Failed to parse critique response: %v", err)
+	}
+	if cr.OriginalPrompt != "test event" {
+		t.Errorf("Expected original_prompt 'test event', got: %s", cr.OriginalPrompt)
+	}
+	if len(cr.Predictions) != 1 {
+		t.Errorf("Expected 1 prediction, got: %d", len(cr.Predictions))
+	}
+	pred := cr.Predictions[0]
+	if pred.Confidence != 0.95 {
+		t.Errorf("Expected confidence 0.95, got: %f", pred.Confidence)
+	}
+	if pred.Critique != "Likely due to favorable conditions" {
+		t.Errorf("Expected critique 'Likely due to favorable conditions', got: %s", pred.Critique)
+	}
+}
+
+func TestCritiquedAPIFailure(t *testing.T) {
+	os.Setenv("OPENAI_API_KEY", "testkey")
+	originalDelay := retryDelay
+	retryDelay = 1 * time.Millisecond
+	defer func() { retryDelay = originalDelay }()
+
+	client := &http.Client{
+		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			bodyBytes, _ := io.ReadAll(req.Body)
+			bodyStr := string(bodyBytes)
+			if strings.Contains(bodyStr, "predictor of future stock market events") {
+				// First agent returns valid predictions.
+				validResp := `{"original_prompt": "test event", "predictions": [{"timeframe": "1 week", "description": "Event A", "impact": "Market volatility"}]}`
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString(validResp)),
+					Header:     make(http.Header),
+				}, nil
+			} else if strings.Contains(bodyStr, "Critically review") {
+				// Second agent simulates an API failure.
+				return &http.Response{
+					StatusCode: http.StatusInternalServerError,
+					Body:       io.NopCloser(bytes.NewBufferString("Internal Server Error")),
+					Header:     make(http.Header),
+				}, nil
+			}
+			return nil, errors.New("unexpected request")
+		}),
+	}
+
+	_, err := generateCritiquedPredictions("test event", client)
+	if err == nil {
+		t.Error("Expected error due to second agent API failure, got nil")
+	}
+}
+
+func TestCritiquedInvalidJSONResponse(t *testing.T) {
+	os.Setenv("OPENAI_API_KEY", "testkey")
+	originalDelay := retryDelay
+	retryDelay = 1 * time.Millisecond
+	defer func() { retryDelay = originalDelay }()
+
+	callCount := 0
+	client := &http.Client{
+		Transport: RoundTripFunc(func(req *http.Request) (*http.Response, error) {
+			bodyBytes, _ := io.ReadAll(req.Body)
+			bodyStr := string(bodyBytes)
+			if strings.Contains(bodyStr, "predictor of future stock market events") {
+				// Valid first agent response.
+				validResp := `{"original_prompt": "test event", "predictions": [{"timeframe": "1 week", "description": "Event A", "impact": "Market volatility"}]}`
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString(validResp)),
+					Header:     make(http.Header),
+				}, nil
+			} else if strings.Contains(bodyStr, "Critically review") {
+				callCount++
+				// Always return invalid JSON for second agent.
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString("invalid json")),
+					Header:     make(http.Header),
+				}, nil
+			}
+			return nil, errors.New("unexpected request")
+		}),
+	}
+
+	_, err := generateCritiquedPredictions("test event", client)
+	if err == nil {
+		t.Error("Expected error due to invalid critique JSON, got nil")
+	}
+	if callCount < 10 {
+		t.Errorf("Expected at least 10 attempts for critique call, got: %d", callCount)
 	}
 }
