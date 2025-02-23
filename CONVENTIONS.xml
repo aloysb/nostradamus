@@ -1,0 +1,86 @@
+<goal>
+  Nostradamus is a script to help investors decision. It receives an event and generate predictions of what might happen over the next comings weeks, months or year. This will help investors taking educated investment decisions.
+  The script involve two LLMs with distinct roles:
+  - the first one will generate the predictions, 
+  - the second one will critique and adjust them base on their probabilities and relevance,
+  The script must respect the rules enumrated in the rules section below.
+  Examples are provided in the examples section below .
+  Instructions will be provided via prompts to generate the code in an iterative manner.
+</goal>
+
+<rules>
+  <rule>Use golang with only the standard library.</rule>
+  <rule>Create a single main.go file executable via `go run main.go <input>`.</rule> 
+    <rule>Restrain from using third party libraries.</rule>
+    <rule>Generate unit tests for any code generated.</rule>
+    <rule>The predictions will be generated via an api call to OpenAI's o1-mini model with a high temperature and a "predictor" system prompt.</rule>
+    <rule>When providing a system prompt, ensure that it contains the expected output-structure</rule>
+    <rule>Predictions are fictionals but should be realistic.</rule>
+    <rule>The prediction will be critiqued and reviewed by a second LLMs call with a different system prompt optimised for reviewing the generated events and their impacts from a different view point, as a knowledgeable investor. The ouput expected from this call will be the same as the original output-structure, with two extra field: "confidence" from 0 to 1, and "critique": a string explaining why this prediction is likely or not.</rule>
+    <rule>The output must be json.</rule>
+    <rule>The output must match the output-structure provided below.</rule>
+    <rule>If the output does not match the output-structure provided, the script will reiterate up to 10 times.</rule>
+    <rule>If after 10 iterations the output is still not valid based on the output-structure, an error will be return with a non-null error value</rule> 
+    <rule>Predict between 1 and 10 events over the next 10 years</rule>
+    <rule>The impact is related to the impact to the stock market</rule>
+  </rules>
+
+  <output-structure>
+    {
+    "original_prompt": '''the original input provided by the user''',
+    "predictions":[
+    {
+    "timeframe": '''timeframe in weeks, years, or month''',
+    "description": ''the description of the event''',
+    "impact": '''a description of the impact and how it affects th the stock market'''
+    },
+    '''...more predictions (up to 10)'''
+    ]
+    }
+  </output-structure>
+
+
+  <examples>
+    <example>
+      <input>China has taken over Taiwan</input>
+      <output-after-first-prediction-call>
+        {
+        "original_prompt": "China has taken over Taiwan",
+        "predictions": [
+        {
+        "timeframe": "1 week",
+        "description": "The US submit an ultimatum to China to call their troops back",
+        "impact": "Extreme political tension and market volatility"
+        },
+        {
+        "timeframe": "1 week",
+        "description": "China taken their troop back",
+        "impact": "Market gains confidence"
+        }
+        ]
+        }
+      </output-after-first-prediction-call>
+      <ouput-after-second-critique-call>
+        {
+        "original_prompt": "China has taken over Taiwan",
+        "predictions": [
+        {
+        "timeframe": "1 week",
+        "description": "The US submit an ultimatum to China to call their troops back",
+        "impact": "Extreme political tension and market volatility"
+        "confidence": 0.98,
+        "critique": "An ultimatum from the US is very likely after the recent event"
+        },
+        {
+        "timeframe": "1 week",
+        "description": "China taken their troop back",
+        "impact": "Market gains confidence"
+        "confidence": 0.72,
+        "critique": "It is likely that China recall their troops to avoid a global conflict that would penalise their economy"
+        }
+        ]
+        }
+      </ouput-after-second-critique-call>
+    </example>
+  </examples>
+
