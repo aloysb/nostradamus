@@ -1,0 +1,9 @@
+model: openrouter/openai/o3-mini-high
+weak-model: openrouter/anthropic/claude-3-5-haiku
+architect: false
+auto-commits: true
+auto-test: true
+test-cmd: "go test"
+auto-lint: true
+lint-cmd: "golangci-lint run"
+read: CONVENTIONS.xml
