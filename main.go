@@ -87,8 +87,13 @@ func callLLM(client *http.Client, input string) (string, error) {
 	finalPrompt := "You are a predictor of future stock market events. Given the event: \"" + input + "\", generate predictions in JSON format. The JSON output must have the field \"original_prompt\" equal to the given input and \"predictions\" be an array with between 1 and 10 items, where each item contains \"timeframe\", \"description\", \"impact\". For example: { \"original_prompt\": \"" + input + "\", \"predictions\": [{ \"timeframe\": \"1 week\", \"description\": \"Prediction text\", \"impact\": \"market impact\" }] }"
 
 	requestPayload := map[string]interface{}{
-		"model":       "o1-mini",
-		"prompt":      finalPrompt,
+		"model": "o1-mini",
+		"messages": []map[string]string{
+			{
+				"role":    "user",
+				"content": finalPrompt,
+			},
+		},
 		"max_tokens":  256,
 		"temperature": 0.9,
 	}
