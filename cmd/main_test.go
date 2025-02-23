@@ -1,5 +1,19 @@
 package main
 
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"os"
+	"strings"
+	"testing"
+	"time"
+	"nostradamus/internal/llm"
+	"nostradamus/internal/config"
+)
+
 // Local type definitions to avoid using the broken models package.
 type Prediction struct {
 	Timeframe   string `json:"timeframe"`
@@ -25,23 +39,6 @@ type CritiquedResponse struct {
 	Predictions    []CritiquedPrediction `json:"predictions"`
 }
 
-import (
-	"bytes"
-	"encoding/json"
-	"errors"
-	"io"
-	"net/http"
-	"os"
-	"strings"
-	"testing"
-	"time"
-	"nostradamus/internal/llm"
-	"nostradamus/internal/config"
-)
-
-// Dummy variable to force inclusion of symbols from main.go.
-// This ensures that generatePredictions, retryDelay, PredictionResponse, and Prediction
-// are referenced, preventing "undefined" errors when linting this file alone.
 var _ = func() interface{} {
 	return struct {
 		GeneratePredictions          func(string, *http.Client) (string, error)
