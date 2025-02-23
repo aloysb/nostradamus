@@ -94,8 +94,6 @@ func callLLM(client *http.Client, input string) (string, error) {
 				"content": finalPrompt,
 			},
 		},
-		"max_tokens":  256,
-		"temperature": 0.9,
 	}
 	requestBody, err := json.Marshal(requestPayload)
 	if err != nil {
