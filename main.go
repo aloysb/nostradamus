@@ -6,26 +6,50 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
 	"time"
+	"log/slog"
 )
 
+// Global variables for debug mode and structured logging.
+var (
+	debugMode bool
+	logger    *slog.Logger
+)
+
+// init initializes the debug mode and logger based on the DEBUG environment variable.
+func init() {
+	debugMode = os.Getenv("DEBUG") == "1"
+	var handler slog.Handler
+	if debugMode {
+		// When DEBUG is set to 1, log debug and info messages to stdout.
+		handler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
+	} else {
+		// Otherwise, discard all log messages.
+		handler = slog.NewTextHandler(io.Discard, &slog.HandlerOptions{Level: slog.LevelDebug})
+	}
+	logger = slog.New(handler)
+}
+
+// retryDelay defines the waiting period between API retry attempts.
 var retryDelay = 1 * time.Second
 
+// Prediction represents a single event prediction.
 type Prediction struct {
 	Timeframe   string `json:"timeframe"`
 	Description string `json:"description"`
 	Impact      string `json:"impact"`
 }
 
+// PredictionResponse represents the initial predictions response structure from the LLM.
 type PredictionResponse struct {
 	OriginalPrompt string       `json:"original_prompt"`
 	Predictions    []Prediction `json:"predictions"`
 }
 
+// CritiquedPrediction contains a prediction with additional critique information.
 type CritiquedPrediction struct {
 	Timeframe   string  `json:"timeframe"`
 	Description string  `json:"description"`
@@ -34,57 +58,67 @@ type CritiquedPrediction struct {
 	Critique    string  `json:"critique"`
 }
 
+// CritiquedResponse represents the critiqued predictions response structure.
 type CritiquedResponse struct {
-	OriginalPrompt string               `json:"original_prompt"`
+	OriginalPrompt string                `json:"original_prompt"`
 	Predictions    []CritiquedPrediction `json:"predictions"`
 }
 
+// main is the entry point to the application. It parses input, calls the prediction generation,
+// and prints the final critiqued predictions to standard output.
 func main() {
-	log.SetOutput(os.Stdout)
+	// Verify that input is provided.
 	if len(os.Args) < 2 {
-		log.Println("Error: No input provided. Usage: go run main.go <input>")
+		logger.Error("No input provided", "usage", "go run main.go <input>")
 		os.Exit(1)
 	}
 	input := strings.Join(os.Args[1:], " ")
-	log.Printf("Received input: %s", input)
+	logger.Info("Received input", "input", input)
+
+	// Generate critiqued predictions via LLM API calls.
 	result, err := generateCritiquedPredictions(input, http.DefaultClient)
 	if err != nil {
-		log.Printf("Error generating critiqued predictions: %v", err)
+		logger.Error("Error generating critiqued predictions", "error", err)
 		os.Exit(1)
 	}
-	log.Printf("Final valid critiqued predictions:\n%s", result)
+	logger.Info("Final valid critiqued predictions", "result", result)
 	fmt.Println(result)
 }
 
+// generatePredictions calls the LLM API up to 10 times to generate predictions for the given input.
+// It validates that the response adheres to the expected JSON structure and returns the valid response string.
 func generatePredictions(input string, client *http.Client) (string, error) {
 	if strings.TrimSpace(input) == "" {
 		return "", errors.New("no input provided")
 	}
 	var lastError error
-	// Try up to 10 attempts to get a valid response.
+	// Attempt to obtain a valid prediction response up to 10 times.
 	for attempt := 1; attempt <= 10; attempt++ {
-		log.Printf("Attempt %d: Calling LLM API for input: %s", attempt, input)
+		logger.Info("Attempting to call LLM API for predictions", "attempt", attempt, "input", input)
 		responseStr, err := callLLM(client, input)
 		if err != nil {
-			log.Printf("Attempt %d: API call failed: %v", attempt, err)
+			logger.Error("LLM API call failed", "attempt", attempt, "error", err)
 			lastError = err
 			time.Sleep(retryDelay)
 			continue
 		}
-		log.Printf("Attempt %d: Received response: %s", attempt, responseStr)
+		logger.Info("Received LLM API response", "attempt", attempt, "response", responseStr)
 		err = validateResponse([]byte(responseStr), input)
 		if err != nil {
-			log.Printf("Attempt %d: Validation failed: %v", attempt, err)
+			logger.Error("Validation failed for LLM API response", "attempt", attempt, "error", err)
 			lastError = err
 			time.Sleep(retryDelay)
 			continue
 		}
-		log.Printf("Attempt %d: Valid response received.", attempt)
+		logger.Info("Valid LLM API response received", "attempt", attempt)
 		return responseStr, nil
 	}
 	return "", fmt.Errorf("failed after 10 attempts: last error: %v", lastError)
 }
 
+// callLLM sends a HTTP POST request to the LLM API with a prompt based on the given input and returns
+// a sanitized response string. It first attempts to unmarshal the response as an LLM chat response,
+// falling back to a direct PredictionResponse unmarshal if needed.
 func callLLM(client *http.Client, input string) (string, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
@@ -111,7 +145,7 @@ func callLLM(client *http.Client, input string) (string, error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
-	log.Printf("Sending request to LLM API at %s with payload: %s", url, string(requestBody))
+	logger.Info("Sending request to LLM API", "url", url, "payload", string(requestBody))
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -127,6 +161,7 @@ func callLLM(client *http.Client, input string) (string, error) {
 		return "", fmt.Errorf("API returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
+	// Attempt to parse the response as an LLM chat response.
 	type llmMessage struct {
 		Content string `json:"content"`
 	}
@@ -143,6 +178,7 @@ func callLLM(client *http.Client, input string) (string, error) {
 		return result, nil
 	}
 
+	// Fallback: try to unmarshal as a PredictionResponse.
 	var pr PredictionResponse
 	err = json.Unmarshal(bodyBytes, &pr)
 	if err == nil && pr.OriginalPrompt == input && len(pr.Predictions) >= 1 && len(pr.Predictions) <= 10 {
@@ -155,6 +191,7 @@ func callLLM(client *http.Client, input string) (string, error) {
 	return "", fmt.Errorf("failed to parse LLM API response; fallback error: %v", err)
 }
 
+// sanitizeResponse trims whitespace and removes markdown code fences from the response string, if present.
 func sanitizeResponse(s string) string {
 	s = strings.TrimSpace(s)
 	if strings.HasPrefix(s, "```") {
@@ -171,6 +208,7 @@ func sanitizeResponse(s string) string {
 	return s
 }
 
+// validateResponse checks whether the given response JSON matches the expected PredictionResponse structure.
 func validateResponse(response []byte, input string) error {
 	var pr PredictionResponse
 	err := json.Unmarshal(response, &pr)
@@ -183,6 +221,7 @@ func validateResponse(response []byte, input string) error {
 	if len(pr.Predictions) < 1 || len(pr.Predictions) > 10 {
 		return fmt.Errorf("predictions length is out of range: got %d", len(pr.Predictions))
 	}
+	// Validate each prediction in the response.
 	for i, p := range pr.Predictions {
 		if strings.TrimSpace(p.Timeframe) == "" {
 			return fmt.Errorf("prediction %d: timeframe is empty", i)
@@ -197,6 +236,8 @@ func validateResponse(response []byte, input string) error {
 	return nil
 }
 
+// callLLMCritique sends a request to the LLM API to get a critiqued version of the predictions.
+// It returns the sanitized JSON response from the critique API.
 func callLLMCritique(client *http.Client, firstResult string) (string, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
@@ -223,7 +264,7 @@ func callLLMCritique(client *http.Client, firstResult string) (string, error) {
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
-	log.Printf("Sending critique request to LLM API at %s with payload: %s", url, string(requestBody))
+	logger.Info("Sending critique request to LLM API", "url", url, "payload", string(requestBody))
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -239,6 +280,7 @@ func callLLMCritique(client *http.Client, firstResult string) (string, error) {
 		return "", fmt.Errorf("critique API returned status %d: %s", resp.StatusCode, string(bodyBytes))
 	}
 
+	// Attempt to parse the response as an LLM chat response.
 	type llmMessage struct {
 		Content string `json:"content"`
 	}
@@ -268,6 +310,7 @@ func callLLMCritique(client *http.Client, firstResult string) (string, error) {
 	return "", fmt.Errorf("failed to parse LLM critique API response; fallback error: %v", err)
 }
 
+// validateCritiqueResponse verifies that the critique response JSON conforms to the expected CritiquedResponse structure.
 func validateCritiqueResponse(response []byte, input string) error {
 	var cr CritiquedResponse
 	err := json.Unmarshal(response, &cr)
@@ -280,6 +323,7 @@ func validateCritiqueResponse(response []byte, input string) error {
 	if len(cr.Predictions) < 1 || len(cr.Predictions) > 10 {
 		return fmt.Errorf("predictions array length is out of range: %d", len(cr.Predictions))
 	}
+	// Validate each critiqued prediction.
 	for i, p := range cr.Predictions {
 		if strings.TrimSpace(p.Timeframe) == "" {
 			return fmt.Errorf("prediction %d: timeframe is empty", i)
@@ -300,33 +344,35 @@ func validateCritiqueResponse(response []byte, input string) error {
 	return nil
 }
 
+// generateCritiquedPredictions first obtains the initial predictions from the LLM API and then refines them
+// by calling the critique API. It returns the final, validated critiqued predictions as a JSON string.
 func generateCritiquedPredictions(input string, client *http.Client) (string, error) {
-	// First, generate initial predictions.
-	firstResult, err := generatePredictions(input, client)
+	// Generate initial predictions.
+	initialPredictions, err := generatePredictions(input, client)
 	if err != nil {
 		return "", err
 	}
 
 	var lastError error
-	// Try up to 10 attempts for the critique agent.
+	// Attempt up to 10 times to obtain a valid critique response.
 	for attempt := 1; attempt <= 10; attempt++ {
-		log.Printf("Critique Attempt %d: Calling critique LLM API with predictions.", attempt)
-		critiqueResult, err := callLLMCritique(client, firstResult)
+		logger.Info("Attempting to call critique LLM API", "attempt", attempt)
+		critiqueResult, err := callLLMCritique(client, initialPredictions)
 		if err != nil {
-			log.Printf("Critique Attempt %d: API call failed: %v", attempt, err)
+			logger.Error("Critique API call failed", "attempt", attempt, "error", err)
 			lastError = err
 			time.Sleep(retryDelay)
 			continue
 		}
-		log.Printf("Critique Attempt %d: Received response: %s", attempt, critiqueResult)
+		logger.Info("Received critique response", "attempt", attempt, "response", critiqueResult)
 		err = validateCritiqueResponse([]byte(critiqueResult), input)
 		if err != nil {
-			log.Printf("Critique Attempt %d: Validation failed: %v", attempt, err)
+			logger.Error("Critique response validation failed", "attempt", attempt, "error", err)
 			lastError = err
 			time.Sleep(retryDelay)
 			continue
 		}
-		log.Printf("Critique Attempt %d: Valid critique response received.", attempt)
+		logger.Info("Valid critique response received", "attempt", attempt)
 		return critiqueResult, nil
 	}
 	return "", fmt.Errorf("failed after 10 critique attempts: last error: %v", lastError)
