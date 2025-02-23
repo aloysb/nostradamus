@@ -37,7 +37,6 @@ import (
 	"time"
 	"nostradamus/internal/llm"
 	"nostradamus/internal/config"
-	"nostradamus/internal/models"
 )
 
 // Dummy variable to force inclusion of symbols from main.go.
